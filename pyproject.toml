@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "planter-ecs"
+version = "0.1.0"
+description = ""
+authors = ["Kyle Dougan <kdougan@apple.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pygame = "^2.5.2"
+esper = "^3.1"
+pyglm = "^2.7.1"
+mdiicons = "^0.0.2"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.12.0"
+pylint = "^3.0.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
