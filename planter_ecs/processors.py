@@ -10,6 +10,7 @@ from glm import vec2
 from planter_ecs.components import (
     Acceleration,
     AddResource,
+    Animation,
     CurrentPlayer,
     Position,
     Resources,
@@ -102,20 +103,20 @@ class Renderer(esper.Processor):
         self.res = GameResources()
 
     def process(self):
-        self.window.fill((30, 20, 20))
+        self.window.fill((20 * 4, 30 * 4, 20 * 4))
 
-        if self.tile_map:
-            tile_size = self.tile_map.tile_size
-            for y, row in enumerate(self.tile_map.tiles):
-                for x, tile in enumerate(row):
-                    self.window.blit(tile, (x * tile_size, y * tile_size))
+        # if self.tile_map:
+        #     tile_size = self.tile_map.tile_size
+        #     for y, row in enumerate(self.tile_map.tiles):
+        #         for x, tile in enumerate(row):
+        #             self.window.blit(tile, (x * tile_size, y * tile_size))
 
         for _, (pos, spr) in esper.get_components(Position, Sprite):
             self.window.blit(spr.surface, (pos - (spr.size * 0.5)).to_list())
 
         for _, (pos, res) in esper.get_components(Position, ResourceTimer):
             # draw a progress bar
-            progress = res.time / res.timeout
+            progress = res.time / res.timeout if res.timeout > 0 else 1
             surf = pg.Surface((32, 4))
             surf.fill((0, 0, 0))
             surf.fill((255, 255, 255), (0, 0, 32 * progress, 4))
@@ -128,6 +129,22 @@ class Renderer(esper.Processor):
             self.window.blit(string, (16, 16))
 
         pg.display.update()
+
+
+class Animator(esper.Processor):
+    def __init__(self):
+        self.time = esper.get_processor(Time)
+        assert self.time, "Time processor must be added before Animator processor"
+
+    def process(self):
+        for _, (anim, spr) in esper.get_components(Animation, Sprite):
+            anim.time += self.time.dt
+            if anim.time >= anim.frame_time:
+                anim.time = 0
+                anim.frame += 1
+                if anim.frame >= len(anim.frames):
+                    anim.frame = 0
+            spr.surface = anim.frames[anim.frame]
 
 
 class PlayerMovement(esper.Processor):
@@ -164,21 +181,33 @@ class Planter(esper.Processor):
         if self.input.left_click:
             print("planter clicked")
             renderer = esper.get_processor(Renderer)
-            for ent, _ in esper.get_component(CurrentPlayer):
-                new_ent = esper.create_entity(
-                    ResourceTimer(
-                        owner=ent,
-                        timeout=3.0,
-                        repeat=True,
-                        resource="r1",
-                        amount=10,
-                    ),
-                    Position(self.input.mpos),
-                )
-                if renderer:
-                    esper.add_component(
-                        new_ent, Sprite(surface=renderer.res.surfs["cog"])
+            grid = esper.get_processor(Grid)
+            if not grid.query(self.input.mpos):
+                pos = self.input.mpos // 32 * 32 + 16
+                for ent, _ in esper.get_component(CurrentPlayer):
+                    new_ent = esper.create_entity(
+                        ResourceTimer(
+                            owner=ent,
+                            timeout=2.0,
+                            repeat=True,
+                            resource="r1",
+                            amount=10,
+                        ),
+                        Position(pos),
                     )
+                    if renderer:
+                        esper.add_component(
+                            new_ent,
+                            Animation(
+                                surface=renderer.res.surfs["oil_pump"],
+                                frame_size=vec2(32),
+                                frame_count=4,
+                                frame_time=0.5,
+                            ),
+                        )
+                        esper.add_component(
+                            new_ent, Sprite(surface=renderer.res.surfs["cog"])
+                        )
 
 
 class Movement(esper.Processor):
@@ -228,4 +257,3 @@ class ResourceTimers(esper.Processor):
             if res := esper.component_for_entity(ent, Resources):
                 res[add.kind] += add.amount
                 esper.remove_component(ent, AddResource)
-                print(res)

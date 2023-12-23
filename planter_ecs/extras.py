@@ -26,11 +26,13 @@ class GameResources:
 
             dirt = pg.image.load("resources/dirt-0x0-32x32.png").convert()
             cog = pg.image.load("resources/cog.png").convert_alpha()
+            oil_pump = pg.image.load("resources/oil-pump.png").convert_alpha()
 
             self.surfs["red_rect"] = red_rect
             self.surfs["green_circle"] = green_circle
             self.surfs["dirt"] = dirt
             self.surfs["cog"] = cog
+            self.surfs["oil_pump"] = oil_pump
 
 
 class TileMap:

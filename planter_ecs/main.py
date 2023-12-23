@@ -11,6 +11,7 @@ from planter_ecs.components import (
 )
 from planter_ecs.extras import GameResources, TileMap
 from planter_ecs.processors import (
+    Animator,
     Grid,
     Movement,
     Physics,
@@ -38,6 +39,7 @@ def main(width: int, height: int, include_renderer=True):
     esper.add_processor(Movement())
 
     if include_renderer:
+        esper.add_processor(Animator())
         esper.add_processor(Renderer(width, height))
 
     esper.create_entity(CurrentPlayer(), Resources())
